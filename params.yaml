@@ -1,8 +1,13 @@
-AUGMENTATION: True
-IMAGE_SIZE: [224, 224, 3] # as per VGG 16 model
-BATCH_SIZE: 16
-INCLUDE_TOP: False
-EPOCHS: 1
-CLASSES: 2
-WEIGHTS: imagenet
-LEARNING_RATE: 0.01
+T_max: 500
+checkpoint_path:
+epochs: 50
+image_size: 384
+learning_rate: 0.0001
+min_lr: 1.0e-06
+model_name: tf_efficientnet_b0_ns
+n_accumulate: 1
+scheduler: CosineAnnealingLR
+weight_decay: 1.0e-06
+classes: 4
+train_batch_size: 16
+valid_batch_size: 32

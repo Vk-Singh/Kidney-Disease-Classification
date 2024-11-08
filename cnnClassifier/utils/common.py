@@ -1,6 +1,7 @@
 import os
 from box.exceptions import BoxValueError
 import yaml
+from cnnClassifier.utils.logger import logger
 import json
 import joblib
 from ensure import ensure_annotations
@@ -8,27 +9,23 @@ from box import ConfigBox
 from pathlib import Path
 from typing import Any
 import base64
-import sys
-import logging
-
-logging_str = "[%(asctime)s: %(levelname)s: %(module)s: %(message)s]"
-
-log_dir = "logs"
-log_filepath = os.path.join(log_dir,"running_logs.log")
-os.makedirs(log_dir, exist_ok=True)
+import torch
+import numpy as np
 
 
-logging.basicConfig(
-    level= logging.INFO,
-    format= logging_str,
+@ensure_annotations
+def set_seed(seed=42):
+    '''Sets the seed of the entire notebook so results are the same every time we run.
+    This is for REPRODUCIBILITY.'''
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    # When running on the CuDNN backend, two further options must be set
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    # Set a fixed value for the hash seed
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
-    handlers=[
-        logging.FileHandler(log_filepath),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-
-logger = logging.getLogger("Kidney-Disease-Classification")
 
 
 @ensure_annotations

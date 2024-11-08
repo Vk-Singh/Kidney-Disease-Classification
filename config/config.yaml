@@ -1,5 +1,5 @@
 artifacts_root: artifacts
-
+seed: 42
 
 data_ingestion:
   root_dir: artifacts/data_ingestion
@@ -13,4 +13,9 @@ data_transformation:
   file_name: KidneyData.csv
   test_data_size: 0.33
   train_valid_split: 0.25
-  image_size: 384
+
+training:
+  root_dir: artifacts/training
+  trained_model_path: models/
+
+

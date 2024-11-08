@@ -8,7 +8,11 @@ import gc
 import time
 from collections import defaultdict
 import copy
+import torch
+import torch.nn as nn
+import torch.optim as optim
 from torcheval.metrics import MulticlassAUROC
+import torch.nn.functional as F
 
 
 def train_one_epoch(model, optimizer, scheduler, dataloader, device, epoch):
@@ -22,12 +26,9 @@ def train_one_epoch(model, optimizer, scheduler, dataloader, device, epoch):
         images = data['image'].to(device, dtype=torch.float)
         targets = data['target'].to(device, dtype=torch.long)
         
-        batch_size = images.size(0)
-        
-        outputs = model(images)
-       
+        batch_size = images.size(0)     
+        outputs = model(images)    
         loss = criterion(outputs, targets)
-            
         loss.backward()
     
         if (batch + 1) % CONFIG['n_accumulate'] == 0:
@@ -41,9 +42,7 @@ def train_one_epoch(model, optimizer, scheduler, dataloader, device, epoch):
                 
         multi_auroc = MulticlassAUROC(num_classes=4)
         multi_auroc.update(input=outputs, target=targets)
-        auroc = multi_auroc.compute()
-
-              
+        auroc = multi_auroc.compute()            
         
         running_loss += (loss.item() * batch_size)
         running_auroc  += (auroc * batch_size)
@@ -53,8 +52,8 @@ def train_one_epoch(model, optimizer, scheduler, dataloader, device, epoch):
         if batch % 25 == 0:
             loss, current = epoch_loss, batch
             step = (batch // 25) + epoch*num_batches//25
-            mlflow.log_metric("loss", f"{loss:3f}", step=(step))
-            mlflow.log_metric("MulticlassAUROC", f"{epoch_auroc:3f}", step=(step))
+            #mlflow.log_metric("loss", f"{loss:3f}", step=(step))
+            #mlflow.log_metric("MulticlassAUROC", f"{epoch_auroc:3f}", step=(step))
         
         bar.set_postfix(Epoch=epoch, Train_Loss=epoch_loss, Train_Auroc=epoch_auroc,
                         LR=optimizer.param_groups[0]['lr'])
@@ -81,7 +80,7 @@ def run_training(model, optimizer, scheduler, device, num_epochs, train_loader, 
                                            dataloader=train_loader, 
                                            device=CONFIG['device'], epoch=epoch)
         
-        val_epoch_loss, val_epoch_auroc = valid_one_epoch(model, optimizer,valid_loader, device=CONFIG['device'], 
+        val_epoch_loss, val_epoch_auroc = valid_one_epoch(model,valid_loader, device=CONFIG['device'], 
                                          epoch=epoch)
     
         history['Train Loss'].append(train_epoch_loss)
@@ -129,82 +128,38 @@ def criterion(outputs, targets):
     return nn.CrossEntropyLoss()(outputs, targets)
 
 
-class Training:
-    def __init__(self, config: TrainingConfig):
-        self.config = config
 
+@torch.inference_mode()
+def validate_model(model, dataloader, criterion, device, epoch=1):
+    model.eval()
+    dataset_size = 0
+    running_loss = 0.0
+    running_auroc = 0.0
     
-    def get_base_model(self):
-        self.model = tf.keras.models.load_model(
-            self.config.updated_base_model_path
-        )
-
-    def train_valid_generator(self):
-
-        datagenerator_kwargs = dict(
-            rescale = 1./255,
-            validation_split=0.20
-        )
-
-        dataflow_kwargs = dict(
-            target_size=self.config.params_image_size[:-1],
-            batch_size=self.config.params_batch_size,
-            interpolation="bilinear"
-        )
-
-        valid_datagenerator = tf.keras.preprocessing.image.ImageDataGenerator(
-            **datagenerator_kwargs
-        )
-
-        self.valid_generator = valid_datagenerator.flow_from_directory(
-            directory=self.config.training_data,
-            subset="validation",
-            shuffle=False,
-            **dataflow_kwargs
-        )
-
-        if self.config.params_is_augmentation:
-            train_datagenerator = tf.keras.preprocessing.image.ImageDataGenerator(
-                rotation_range=40,
-                horizontal_flip=True,
-                width_shift_range=0.2,
-                height_shift_range=0.2,
-                shear_range=0.2,
-                zoom_range=0.2,
-                **datagenerator_kwargs
-            )
-        else:
-            train_datagenerator = valid_datagenerator
-
-        self.train_generator = train_datagenerator.flow_from_directory(
-            directory=self.config.training_data,
-            subset="training",
-            shuffle=True,
-            **dataflow_kwargs
-        )
-
+   
+    bar = tqdm(enumerate(dataloader), total=len(dataloader), position=0, leave=True)
+    for batch, data in bar:
+       
+        images = data['image'].to(device, dtype=torch.float)
+        targets = data['target'].to(device, dtype=torch.long)    
+        batch_size = images.size(0)
+        outputs = model(images)
+        loss = criterion(outputs, targets)
+        multi_auroc = MulticlassAUROC(num_classes=4)
+        multi_auroc.update(input=outputs, target=targets)
+        auroc = multi_auroc.compute()
+        
+        running_loss += (loss.item() * batch_size)
+        running_auroc  += (auroc * batch_size)
+        dataset_size += batch_size    
+        epoch_loss = running_loss / dataset_size
+        epoch_auroc = running_auroc / dataset_size
+        
+        bar.set_postfix(Epoch=epoch, Valid_Loss=epoch_loss, Valid_Auroc=epoch_auroc,)   
     
-    @staticmethod
-    def save_model(path: Path, model: tf.keras.Model):
-        model.save(path)
-
-
-
+  
+    #mlflow.log_metric("eval_loss", f"{epoch_loss:2f}", step=epoch)
+    #mlflow.log_metric("eval_MulticlassAUROC", f"{epoch_auroc:2f}", step=epoch)
+    gc.collect()
     
-    def train(self):
-        self.steps_per_epoch = self.train_generator.samples // self.train_generator.batch_size
-        self.validation_steps = self.valid_generator.samples // self.valid_generator.batch_size
-
-        self.model.fit(
-            self.train_generator,
-            epochs=self.config.params_epochs,
-            steps_per_epoch=self.steps_per_epoch,
-            validation_steps=self.validation_steps,
-            validation_data=self.valid_generator
-        )
-
-        self.save_model(
-            path=self.config.trained_model_path,
-            model=self.model
-        )
-
+    return epoch_loss, epoch_auroc

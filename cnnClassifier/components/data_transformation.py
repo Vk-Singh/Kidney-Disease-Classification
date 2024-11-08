@@ -1,5 +1,5 @@
 import os
-from cnnClassifier import logger
+from cnnClassifier.utils.logger import logger
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import albumentations as A
@@ -7,9 +7,8 @@ from albumentations.pytorch import ToTensorV2
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-
+import cv2
 from cnnClassifier.entity.config_entity import (DataTransformationConfig)
-
 
 class DataSplit:
     def __init__(self, config:DataTransformationConfig):
@@ -58,7 +57,7 @@ def transform(img_size):
                 ToTensorV2()], p=1.),
     
         "valid": A.Compose([
-            A.Resize(self.config['img_size'], self.config['img_size']),
+            A.Resize(img_size, img_size),
             A.Normalize(
                 mean=[0.485, 0.456, 0.406], 
                 std=[0.229, 0.224, 0.225], 
