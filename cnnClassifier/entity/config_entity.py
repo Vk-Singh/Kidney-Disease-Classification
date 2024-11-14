@@ -18,6 +18,7 @@ class DataTransformationConfig:
     test_data_size: float
     train_valid_split: float
     image_size: int
+    seed: int
 
 
 @dataclass(frozen=True)

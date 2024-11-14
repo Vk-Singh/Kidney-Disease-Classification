@@ -10,7 +10,7 @@ data_ingestion:
 data_transformation:
   root_dir: artifacts/data_ingestion
   images_folder_name: CT-KIDNEY-DATASET-Normal-Cyst-Tumor-Stone
-  file_name: KidneyData.csv
+  file_name: kidneyData.csv
   test_data_size: 0.33
   train_valid_split: 0.25
 

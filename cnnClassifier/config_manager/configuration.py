@@ -41,6 +41,7 @@ class ConfigurationManager:
         ])
         data_Transformation_config = DataTransformationConfig(
             root_dir = Path(config.root_dir),
+            seed = self.config.seed,
             images_folder_name = config.images_folder_name,
             file_name = config.file_name,
             test_data_size = config.test_data_size,
