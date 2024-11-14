@@ -9,8 +9,6 @@ from cnnClassifier.config_manager.configuration import ConfigurationManager
 config = ConfigurationManager(CONFIG_FILE_PATH, PARAMS_FILE_PATH)
 
 
-
-
 class DataIngestionPipeline:
     def __init__(self, config:DataIngestionConfig):
         self.config = config
