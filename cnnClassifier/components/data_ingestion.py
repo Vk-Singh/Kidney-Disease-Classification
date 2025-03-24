@@ -8,6 +8,18 @@ from cnnClassifier.entity.config_entity import (DataIngestionConfig)
 
 class DataIngestion:
     def __init__(self, config: DataIngestionConfig):
+        '''
+        DataIngestion Constructor
+
+        Parameters
+        ----------
+        config : DataIngestionConfig
+            Configuration for DataIngestion
+
+        Returns
+        -------
+        None
+        '''
         self.config = config
 
     

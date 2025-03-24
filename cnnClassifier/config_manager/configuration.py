@@ -12,6 +12,28 @@ class ConfigurationManager:
         config_filepath = CONFIG_FILE_PATH,
         params_filepath = PARAMS_FILE_PATH):
 
+        """
+        Initialize ConfigurationManager with configuration and parameters file paths.
+
+        Parameters
+        ----------
+        config_filepath : str or Path, optional
+            Path to the configuration YAML file. Defaults to CONFIG_FILE_PATH.
+        params_filepath : str or Path, optional
+            Path to the parameters YAML file. Defaults to PARAMS_FILE_PATH.
+
+        Attributes
+        ----------
+        config : dict
+            Loaded configuration data from the YAML file.
+        params : dict
+            Loaded parameters data from the YAML file.
+
+        Raises
+        ------
+        Any exception raised by read_yaml or create_directories.
+        """
+
         self.config = read_yaml(config_filepath)
         self.params = read_yaml(params_filepath)
 
@@ -19,6 +41,20 @@ class ConfigurationManager:
 
 
     def get_data_ingestion_config(self) ->DataIngestionConfig:
+        """
+        Initialize and return DataIngestionConfig object from the configuration file.
+
+        The method creates the root directory specified in the configuration file if it does not exist.
+
+        Returns
+        -------
+        DataIngestionConfig
+            DataIngestionConfig object with the configuration details.
+
+        Raises
+        ------
+        Any exception raised by Path or create_directories.
+        """
         config =self.config.data_ingestion
 
         create_directories([
@@ -34,6 +70,20 @@ class ConfigurationManager:
         return data_ingestion_config
     
     def get_data_transformation_config(self) -> DataTransformationConfig:
+        """
+        Initialize and return DataTransformationConfig object from the configuration file.
+
+        The method creates the root directory specified in the configuration file if it does not exist.
+
+        Returns
+        -------
+        DataTransformationConfig
+            DataTransformationConfig object with the configuration details.
+
+        Raises
+        ------
+        Any exception raised by Path or create_directories.
+        """
         config =self.config.data_transformation
         params = self.params
         create_directories([
@@ -52,6 +102,20 @@ class ConfigurationManager:
 
 
     def get_training_config(self) -> TrainingConfig:
+        """
+        Initialize and return TrainingConfig object from the configuration file.
+
+        The method creates the root directory and trained model path specified in the configuration file if they do not exist.
+
+        Returns
+        -------
+        TrainingConfig
+            TrainingConfig object with the configuration details.
+
+        Raises
+        ------
+        Any exception raised by Path or create_directories.
+        """
         training = self.config.training
         params = self.params
         #training_data = os.path.join(self.config.data_ingestion.unzip_dir, "kidney-ct-scan-image")
@@ -83,6 +147,19 @@ class ConfigurationManager:
 
 
     def get_evaluation_config(self) -> EvaluationConfig:
+        """
+        Initialize and return EvaluationConfig object from the configuration file.
+
+        Returns
+        -------
+        EvaluationConfig
+            EvaluationConfig object with the configuration details.
+
+        Raises
+        ------
+        Any exception raised by EvaluationConfig initialization.
+        """
+
         eval_config = EvaluationConfig(
             path_of_model="models/training/model.h5",
             training_data="models/data_ingestion/kidney-ct-scan-image",

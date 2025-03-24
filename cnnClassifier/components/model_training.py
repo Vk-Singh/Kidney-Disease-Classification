@@ -16,6 +16,20 @@ import torch.nn.functional as F
 
 
 def train_one_epoch(model, optimizer, scheduler, dataloader, device, epoch):
+    """
+    This function trains the model for one epoch.
+
+    Args:
+        model (nn.Module): The model to be trained
+        optimizer (optim.Optimizer): The optimizer used to train the model
+        scheduler (optim.lr_scheduler._LRScheduler): The scheduler used to update the learning rate
+        dataloader (DataLoader): The dataloader that contains the training data
+        device (torch.device): The device used to train the model
+        epoch (int): The current epoch number
+
+    Returns:
+        tuple: A tuple containing the total loss and AUROC for the current epoch
+    """
     model.train()
     dataset_size = 0
     running_loss = 0.0
@@ -65,6 +79,25 @@ def train_one_epoch(model, optimizer, scheduler, dataloader, device, epoch):
 
 
 def run_training(model, optimizer, scheduler, device, num_epochs, train_loader, valid_loader, run_id="latest"):
+    """
+    Trains the model for a specified number of epochs, evaluates it on a validation set, 
+    and saves the best performing model based on the AUROC metric.
+
+    Args:
+        model (nn.Module): The neural network model to be trained.
+        optimizer (optim.Optimizer): The optimizer to use for training.
+        scheduler (optim.lr_scheduler._LRScheduler): The learning rate scheduler.
+        device (torch.device): The device to run the training on (CPU or GPU).
+        num_epochs (int): The total number of epochs to train the model.
+        train_loader (DataLoader): The DataLoader for the training dataset.
+        valid_loader (DataLoader): The DataLoader for the validation dataset.
+        run_id (str, optional): The identifier for the current training run. Defaults to "latest".
+
+    Returns:
+        tuple: The best model after training and a history dictionary containing 
+               training and validation loss and AUROC for each epoch.
+    """
+
     os.makedirs("/home/vikram/Downloads/pop_os_backup/Kidney-Disease-Classification-Deep-Learning-Project-main/artifacts/runs/"+run_id)
     if torch.cuda.is_available():
         print("[INFO] Using GPU: {}\n".format(torch.cuda.get_device_name()))
@@ -125,12 +158,35 @@ scheduler = lr_scheduler.CosineAnnealingLR(optimizer,T_max=CONFIG['T_max'],
 
 
 def criterion(outputs, targets):
+    """
+    Computes the cross-entropy loss between the model's output and the target.
+
+    Args:
+        outputs (torch.Tensor): The output of the model
+        targets (torch.Tensor): The target labels
+
+    Returns:
+        torch.Tensor: The cross-entropy loss
+    """
     return nn.CrossEntropyLoss()(outputs, targets)
 
 
 
 @torch.inference_mode()
 def validate_model(model, dataloader, criterion, device, epoch=1):
+    """
+    Validates the model on the validation set.
+
+    Args:
+        model (nn.Module): The model to be validated
+        dataloader (DataLoader): The validation dataloader
+        criterion (nn.Module): The loss criterion
+        device (torch.device): The device used to validate the model
+        epoch (int, optional): The current epoch number. Defaults to 1.
+
+    Returns:
+        tuple: A tuple containing the total loss and AUROC for the current epoch
+    """
     model.eval()
     dataset_size = 0
     running_loss = 0.0
